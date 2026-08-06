@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: resume-analyzer
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: llama3.2
+        options:
+          temperature: 0.2
+      embedding:
+        model: nomic-embed-text
+
+app:
+  resume-char-limit: 4000
+  job-description-char-limit: 4000
+  rag:
+    chunk-size: 500
+    chunk-overlap: 100
+    top-k: 4
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.jaywant.resumeanalyzer: INFO
