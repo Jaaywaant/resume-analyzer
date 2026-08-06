@@ -1,0 +1,281 @@
+# 10-Day Resume Analyzer — Learn + Build Plan
+
+> **For AI assistant:** When the user says "Let's do Day X", read this file and continue from that day's section.
+>
+> **Repo:** https://github.com/Jaaywaant/resume-analyzer
+> **Local path:** `C:\Users\JaywantKadam\Desktop\private\Project\resume-analyzer`
+> **Stack:** Java 17+, Spring Boot 3, Spring AI, Ollama (llama3.2 + nomic-embed-text)
+
+---
+
+## Progress Tracker
+
+| Day | Topic | Status |
+|-----|-------|--------|
+| 1–2 | MVP (analyze, review, health, RAG basics) | ✅ Done |
+| 3 | Prompt engineering deep dive | ⬜ |
+| 4 | Structured output & guardrails | ⬜ |
+| 5 | LLM evaluation tests | ⬜ |
+| 6 | RAG deep dive + citations | ⬜ |
+| 7 | JD URL scraping (hybrid AI) | ⬜ |
+| 8 | Function calling / `@Tool` | ⬜ |
+| 9 | Simple UI + Docker | ⬜ |
+| 10 | Portfolio polish + demo | ⬜ |
+
+**Daily time:** ~1.5–2 hours weekdays, ~3 hours weekends (~15–20 hours total).
+
+---
+
+## Day 3 — Prompt Engineering Deep Dive
+
+**Build:** Tune prompts, create `analyze-v2.st`, compare v1 vs v2 results.
+
+**Learn — What is prompt engineering?**
+A prompt is instructions you give the LLM. Small wording changes can shift output a lot. In production, prompts are versioned like code.
+
+| Term | Meaning |
+|------|---------|
+| System prompt | Rules the model follows (e.g. "never invent experience") |
+| User prompt | The actual task + data (resume, JD) |
+| Temperature | `0.2` = consistent; `0.8` = creative |
+| Few-shot | Showing 1–2 example outputs in the prompt |
+
+**Tasks:**
+1. Run `/analyze` with 3 different JDs
+2. Note where output is wrong/vague
+3. Create `src/main/resources/prompts/analyze-v2.st` with stricter rules
+4. Compare scores side by side
+
+**Deliverable:** `analyze-v2.st` committed; notes on what changed and why.
+
+**Prompt to AI:** `Let's do Day 3` + bring 3 job descriptions and notes on what was wrong in today's analyze response.
+
+---
+
+## Day 4 — Structured Output & Guardrails
+
+**Build:** Stronger JSON schema validation, retry when LLM returns bad JSON.
+
+**Learn — Why structured output?**
+Free-form LLM text is hard to use in apps. `BeanOutputConverter` maps LLM response → Java record (`AnalysisResult`).
+
+| Term | Meaning |
+|------|---------|
+| `BeanOutputConverter` | Maps LLM response → Java record |
+| Guardrails | Rules like "don't invent employers/degrees" |
+| Hallucination | LLM making up facts — guardrails reduce this |
+
+**Tasks:**
+1. Validate: reject if `matchScore` missing or out of range
+2. Retry once if JSON parse fails
+3. Strengthen guardrails in prompts
+
+**Deliverable:** Robust parsing with clear error messages in Swagger.
+
+**Prompt to AI:** `Let's do Day 4`
+
+---
+
+## Day 5 — LLM Evaluation (Quality Without Fine-Tuning)
+
+**Build:** Test suite with sample resume + JD fixtures.
+
+**Learn — How do you know the AI is good?**
+Create fixed inputs; check outputs fall in expected ranges. No model retraining needed.
+
+| Term | Meaning |
+|------|---------|
+| Golden dataset | Fixed test cases (resume + JD + expected skills) |
+| Regression test | Re-run after prompt changes; scores shouldn't break |
+| Evaluation | Measuring quality, not just "does it compile" |
+
+**Tasks:**
+1. Add `src/test/resources/samples/resume-1.txt` and `job-1.txt`
+2. Write `AnalysisServiceTest` — assert `matchedSkills` contains "Java"
+3. Document expected score range (e.g. 60–85 for good match)
+
+**Deliverable:** 3+ evaluation tests passing via `.\mvnw.cmd test`.
+
+**Prompt to AI:** `Let's do Day 5`
+
+---
+
+## Day 6 — RAG Deep Dive + Citations
+
+**Build:** Improve chunking, add citations in response.
+
+**Learn — What is RAG?**
+1. Split text into chunks
+2. Convert chunks to vectors (embeddings)
+3. Find chunks most similar to the question
+4. Send only those chunks as context
+
+**Why?** Saves tokens, improves relevance, reduces hallucination.
+
+| Term | Meaning |
+|------|---------|
+| Embedding | Text → numbers capturing meaning |
+| Vector | That list of numbers |
+| Cosine similarity | How "close" two vectors are (0–1) |
+| Chunk size | 500 chars starting point; tune as needed |
+| Top-K | How many chunks to retrieve (e.g. 4) |
+
+**Tasks:**
+1. Add `citations` field to `AnalysisResult`
+2. Tune `chunk-size` and `top-k` in `application.yml`
+3. Optional: flag to compare analysis with RAG on vs off
+
+**Deliverable:** Response includes citations; can explain RAG in an interview.
+
+**Prompt to AI:** `Let's do Day 6`
+
+---
+
+## Day 7 — Hybrid AI: JD URL Scraping
+
+**Build:** `POST /api/v1/analyze-from-url` — resume file + job posting URL.
+
+**Learn — When to use code vs LLM**
+
+| Use code for | Use LLM for |
+|--------------|-------------|
+| URL fetching, HTML parsing | Summarizing, matching, suggestions |
+| Keyword counting | Experience fit narrative |
+| Date/email validation | Rewording bullet points |
+
+| Term | Meaning |
+|------|---------|
+| Hybrid pipeline | Code does deterministic steps; LLM does reasoning |
+| Jsoup | HTML parser — extract text from job pages |
+
+**Tasks:**
+1. Add `JobDescriptionScraperService` with Jsoup
+2. New endpoint: upload resume + paste job URL
+3. Scrape → clean text → pass to `AnalysisService`
+
+**Deliverable:** Analyze from URL works in Swagger.
+
+**Prompt to AI:** `Let's do Day 7`
+
+---
+
+## Day 8 — Function Calling / Tools (`@Tool`)
+
+**Build:** Spring AI tools the LLM can invoke during analysis.
+
+**Learn — What are AI tools?**
+LLM decides when to call your Java methods. Example: calls `scoreAtsKeywords()` → uses result in answer.
+
+| Term | Meaning |
+|------|---------|
+| `@Tool` | Spring AI annotation — exposes method to LLM |
+| Function calling | LLM requests function; your code runs it; LLM continues |
+| Tool vs RAG | RAG retrieves text; tools run logic (math, APIs, rules) |
+
+**Tasks:**
+1. Add `@Tool` methods: `extractSkills`, `scoreAtsKeywords`, `normalizeSkill`
+2. Wire tools into `ChatClient` for analyze flow
+3. Compare output with and without tools
+
+**Deliverable:** Analysis uses tools; understand when each helps.
+
+**Prompt to AI:** `Let's do Day 8`
+
+---
+
+## Day 9 — Simple UI + Docker
+
+**Build:** Thymeleaf upload page + `docker-compose.yml`.
+
+**Learn — Packaging AI apps**
+- **UI:** Form for non-technical users
+- **Docker:** Run anywhere — app + Ollama in one command
+
+| Term | Meaning |
+|------|---------|
+| Thymeleaf | Server-side HTML in Spring Boot |
+| Docker Compose | Multi-container setup in one file |
+
+**Tasks:**
+1. Single page: upload resume, paste JD or URL, show results
+2. `docker-compose.yml`: `app` + `ollama` services
+3. README: "Run with Docker" section
+
+**Deliverable:** UI works locally; Docker documented.
+
+**Prompt to AI:** `Let's do Day 9`
+
+---
+
+## Day 10 — Portfolio Polish + Your Story
+
+**Build:** README, architecture diagram, demo, self-test on your resume.
+
+**Learn — How to present a Gen AI project**
+1. **Problem** — match resume to jobs
+2. **Architecture** — RAG, tools, structured output
+3. **Trade-offs** — "Local Ollama = free but slower than GPT-4"
+4. **Results** — "Improved match score from X to Y"
+
+**Tasks:**
+1. README: screenshots, architecture, "Gen AI concepts used"
+2. Run resume against 5 real JDs; note improvements
+3. Optional: 2-min screen recording
+4. Final commit + push
+
+**Deliverable:** Portfolio-ready repo for interviews.
+
+**Prompt to AI:** `Let's do Day 10`
+
+---
+
+## Gen AI Glossary (by day)
+
+| Day | New terms |
+|-----|-----------|
+| 3 | Prompt, system/user prompt, temperature, few-shot |
+| 4 | Structured output, guardrails, hallucination |
+| 5 | Golden dataset, evaluation, regression |
+| 6 | RAG, embedding, vector, chunk, top-K, cosine similarity |
+| 7 | Hybrid pipeline, deterministic vs probabilistic |
+| 8 | Tool, function calling, `@Tool` |
+| 9 | Docker, deployment |
+| 10 | Trade-offs, portfolio narrative |
+
+---
+
+## How to run the app
+
+```powershell
+cd C:\Users\JaywantKadam\Desktop\private\Project\resume-analyzer
+.\mvnw.cmd spring-boot:run
+```
+
+- Swagger UI: http://localhost:8080/swagger-ui.html
+- Health: http://localhost:8080/api/v1/health/ollama
+
+**Ollama:** Usually runs in background. If `ollama serve` says port in use, Ollama is already running.
+
+---
+
+## Daily workflow with AI assistant
+
+1. Say **"Let's do Day X"** (this file is the source of truth)
+2. AI explains the concept
+3. Implement together in this repo
+4. Test in Swagger/UI
+5. Commit + push when deliverable works
+
+---
+
+## API endpoints (current)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/v1/health/ollama` | Check Ollama + models |
+| POST | `/api/v1/analyze` | Resume vs JD (multipart) |
+| POST | `/api/v1/resume/review` | Standalone resume critique |
+
+**Planned (by day):**
+- Day 7: `POST /api/v1/analyze-from-url`
+- Day 9: Web UI at `/`
