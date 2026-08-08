@@ -1,11 +1,12 @@
 package com.jaywant.resumeanalyzer.service;
 
+import com.jaywant.resumeanalyzer.ai.AnalysisOutputValidator;
 import com.jaywant.resumeanalyzer.ai.PromptService;
+import com.jaywant.resumeanalyzer.ai.StructuredOutputClient;
 import com.jaywant.resumeanalyzer.config.AppProperties;
 import com.jaywant.resumeanalyzer.domain.ResumeReviewResult;
 import com.jaywant.resumeanalyzer.parser.TextTruncator;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +17,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ResumeReviewService {
 
-    private final ChatClient.Builder chatClientBuilder;
+    private final StructuredOutputClient structuredOutputClient;
+    private final AnalysisOutputValidator analysisOutputValidator;
     private final PromptService promptService;
     private final AppProperties appProperties;
 
@@ -29,21 +31,18 @@ public class ResumeReviewService {
                 "resume", resume,
                 "format", converter.getFormat()));
 
-        ResumeReviewResult result = chatClientBuilder.build()
-                .prompt(prompt)
-                .call()
-                .entity(ResumeReviewResult.class);
+        ResumeReviewResult result = structuredOutputClient.generate(
+                prompt,
+                ResumeReviewResult.class,
+                analysisOutputValidator::validateRawReviewJson,
+                analysisOutputValidator::validateReview);
 
         return new ResumeReviewResult(
-                clampScore(result.overallScore()),
+                result.overallScore(),
                 safeList(result.strengths()),
                 safeList(result.improvements()),
                 safeList(result.redFlags()),
                 safeList(result.atsTips()));
-    }
-
-    private int clampScore(int score) {
-        return Math.max(0, Math.min(100, score));
     }
 
     private List<String> safeList(List<String> values) {

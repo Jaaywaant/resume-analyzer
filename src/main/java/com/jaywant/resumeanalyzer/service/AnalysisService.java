@@ -1,12 +1,13 @@
 package com.jaywant.resumeanalyzer.service;
 
+import com.jaywant.resumeanalyzer.ai.AnalysisOutputValidator;
 import com.jaywant.resumeanalyzer.ai.PromptService;
+import com.jaywant.resumeanalyzer.ai.StructuredOutputClient;
 import com.jaywant.resumeanalyzer.config.AppProperties;
 import com.jaywant.resumeanalyzer.domain.AnalysisResult;
 import com.jaywant.resumeanalyzer.parser.TextTruncator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.stereotype.Service;
 
@@ -45,7 +46,8 @@ public class AnalysisService {
             "job", "title", "skills", "experience", "development", "engineer", "developer",
             "required", "preferred", "strong", "looking", "need", "years", "team", "work");
 
-    private final ChatClient.Builder chatClientBuilder;
+    private final StructuredOutputClient structuredOutputClient;
+    private final AnalysisOutputValidator analysisOutputValidator;
     private final PromptService promptService;
     private final RagService ragService;
     private final AppProperties appProperties;
@@ -66,10 +68,11 @@ public class AnalysisService {
                 "ragContext", ragContext.isBlank() ? "No additional context retrieved." : ragContext,
                 "format", converter.getFormat()));
 
-        AnalysisResult result = chatClientBuilder.build()
-                .prompt(prompt)
-                .call()
-                .entity(AnalysisResult.class);
+        AnalysisResult result = structuredOutputClient.generate(
+                prompt,
+                AnalysisResult.class,
+                analysisOutputValidator::validateRawAnalysisJson,
+                analysisOutputValidator::validateAnalysis);
 
         List<String> rawMatched = safeList(result.matchedSkills());
         List<String> matched = keepEvidenced(resume, rawMatched);
@@ -79,13 +82,13 @@ public class AnalysisService {
         List<String> found = atsKeywordService.findPresentKeywords(resume, jobKeywords);
         List<String> atsMissing = atsKeywordService.findMissingKeywords(resume, jobKeywords);
 
-        int score = adjustScore(clampScore(result.matchScore()), rawMatched, matched, found, atsMissing);
+        int score = adjustScore(result.matchScore(), rawMatched, matched, found, atsMissing);
 
         return new AnalysisResult(
                 score,
                 matched,
                 missing,
-                result.experienceFit(),
+                result.experienceFit().strip(),
                 safeList(result.topSuggestions()),
                 found,
                 atsMissing);
@@ -187,10 +190,6 @@ public class AnalysisService {
         }
         // Soft multi-word phrases must appear contiguously (avoid "data"+"engineering" false hits).
         return resumeLower.contains(String.join(" ", tokens));
-    }
-
-    private int clampScore(int score) {
-        return Math.max(0, Math.min(100, score));
     }
 
     private List<String> safeList(List<String> values) {

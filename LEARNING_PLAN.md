@@ -14,7 +14,7 @@
 |-----|-------|--------|
 | 1–2 | MVP (analyze, review, health, RAG basics) | ✅ Done |
 | 3 | Prompt engineering deep dive | ✅ Done |
-| 4 | Structured output & guardrails | ⬜ |
+| 4 | Structured output & guardrails | ✅ Done |
 | 5 | LLM evaluation tests | ⬜ |
 | 6 | RAG deep dive + citations | ⬜ |
 | 7 | JD URL scraping (hybrid AI) | ⬜ |
@@ -78,6 +78,12 @@ Free-form LLM text is hard to use in apps. `BeanOutputConverter` maps LLM respon
 3. Strengthen guardrails in prompts
 
 **Deliverable:** Robust parsing with clear error messages in Swagger.
+
+**Day 4 notes (completed):**
+- `StructuredOutputClient` parses LLM text → typed object via `BeanOutputConverter`, strips markdown fences, and retries once on parse/validation failure.
+- `AnalysisOutputValidator` rejects missing/out-of-range scores and blank required fields before results are trusted.
+- `StructuredOutputException` → HTTP 422 Problem Detail (`Invalid AI structured output`) with a retry hint for Swagger clients.
+- Prompt guardrails strengthened in `analyze-v2.st` and `review-v1.st` (required JSON fields + no invented experience).
 
 **Prompt to AI:** `Let's do Day 4`
 
