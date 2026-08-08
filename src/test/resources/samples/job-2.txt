@@ -1,0 +1,20 @@
+Job Title: Full Stack Engineer (React + Node)
+
+Looking for a Full Stack Engineer to own features end-to-end.
+
+Must-have:
+- React.js and modern JavaScript/TypeScript
+- Node.js / Express backend experience
+- MongoDB or NoSQL databases
+- CSS and responsive UI development
+- Strong communication skills
+
+Preferred:
+- Next.js
+- GraphQL
+- CI/CD with GitHub Actions
+
+You will:
+- Build customer-facing UI screens
+- Implement APIs in Node.js
+- Improve performance and accessibility

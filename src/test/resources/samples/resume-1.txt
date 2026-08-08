@@ -1,0 +1,26 @@
+Alex Rivera
+Software Development Engineer | Java Backend Developer
+alex.rivera@example.com | LinkedIn: linkedin.com/in/alex-rivera
+
+PROFESSIONAL SUMMARY
+Backend developer with 2+ years of experience building enterprise services in Java and Spring Boot.
+Skilled in REST APIs, SQL, Apache Kafka, Docker, and AWS. Focused on reliable production systems,
+testing, and clear API design.
+
+TECHNICAL SKILLS
+Languages & Frameworks: Java, Spring Boot, Spring Security, Spring Data JPA, REST APIs, JUnit, Mockito
+Cloud & Infrastructure: MySQL, AWS, AWS S3, Docker
+Architecture: Microservices, Apache Kafka, Hibernate/JPA
+Tools: Git, CI/CD, Jenkins, Maven, Postman, Swagger/OpenAPI
+
+PROFESSIONAL EXPERIENCE
+Software Development Engineer 1 — Northstar Systems | 2024 – Present
+- Designed and developed scalable RESTful APIs using Spring Boot for utility and finance domains.
+- Implemented JWT authentication and role-based authorization with Spring Security.
+- Optimized bulk database operations with JDBC batching for 50,000+ records per job.
+- Built file upload/download flows with AWS S3.
+- Containerized services with Docker and integrated Apache Kafka for event-driven communication.
+- Wrote JUnit 5 and Mockito tests achieving 80%+ coverage.
+
+EDUCATION
+B.Tech Computer Science — 2019 – 2023

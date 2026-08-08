@@ -15,7 +15,7 @@
 | 1–2 | MVP (analyze, review, health, RAG basics) | ✅ Done |
 | 3 | Prompt engineering deep dive | ✅ Done |
 | 4 | Structured output & guardrails | ✅ Done |
-| 5 | LLM evaluation tests | ⬜ |
+| 5 | LLM evaluation tests | ✅ Done |
 | 6 | RAG deep dive + citations | ⬜ |
 | 7 | JD URL scraping (hybrid AI) | ⬜ |
 | 8 | Function calling / `@Tool` | ⬜ |
@@ -108,6 +108,11 @@ Create fixed inputs; check outputs fall in expected ranges. No model retraining 
 3. Document expected score range (e.g. 60–85 for good match)
 
 **Deliverable:** 3+ evaluation tests passing via `.\mvnw.cmd test`.
+
+**Day 5 notes (completed):**
+- Golden fixtures: `src/test/resources/samples/resume-1.txt`, `job-1.txt` (good Java match), `job-2.txt` (React/Node), `job-3.txt` (data engineer).
+- `AnalysisServiceTest` evaluates score bands + skill evidence with stubbed LLM outputs (regression-friendly).
+- Expected ranges: job-1 **60–85** and matchedSkills contains Java; job-2/job-3 **≤45** with hallucinated stacks dropped.
 
 **Prompt to AI:** `Let's do Day 5`
 

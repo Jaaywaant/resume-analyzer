@@ -1,0 +1,21 @@
+Job Title: Java Backend Developer (SDE-1)
+
+We are hiring a Java Backend Developer to build and maintain microservices.
+
+Required skills:
+- Strong Java and Spring Boot
+- REST API design and development
+- SQL / relational databases (MySQL or PostgreSQL)
+- Familiarity with Docker
+- Git and Agile collaboration
+
+Nice to have:
+- Kafka or messaging systems
+- AWS basics
+- Experience with JUnit / Mockito
+
+Responsibilities:
+- Design and implement backend services
+- Write clean, testable code
+- Collaborate with frontend and product teams
+- Participate in code reviews

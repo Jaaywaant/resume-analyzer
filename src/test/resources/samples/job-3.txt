@@ -1,0 +1,17 @@
+Job Title: Senior Data Engineer
+
+We need a Senior Data Engineer to design large-scale data pipelines.
+
+Required:
+- 5+ years experience in data engineering
+- Apache Spark and Scala or PySpark
+- Airflow or similar orchestration tools
+- Data modeling for warehouses (Snowflake/BigQuery/Redshift)
+- Strong SQL and ETL/ELT design
+
+Nice to have:
+- Kafka streaming
+- dbt
+- Kubernetes
+
+This role focuses on batch/streaming pipelines, not application backends.
