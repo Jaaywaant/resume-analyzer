@@ -13,7 +13,7 @@
 | Day | Topic | Status |
 |-----|-------|--------|
 | 1–2 | MVP (analyze, review, health, RAG basics) | ✅ Done |
-| 3 | Prompt engineering deep dive | ⬜ |
+| 3 | Prompt engineering deep dive | ✅ Done |
 | 4 | Structured output & guardrails | ⬜ |
 | 5 | LLM evaluation tests | ⬜ |
 | 6 | RAG deep dive + citations | ⬜ |
@@ -47,6 +47,13 @@ A prompt is instructions you give the LLM. Small wording changes can shift outpu
 4. Compare scores side by side
 
 **Deliverable:** `analyze-v2.st` committed; notes on what changed and why.
+
+**Day 3 notes (completed):**
+- Baseline v1 on Jaywant’s SDE-1 resume: Java backend JD ~80 (ok), React/Node JD **80 with invented React/Node skills**, Senior Data Engineer JD **70 with invented Spark/Airflow/Snowflake**.
+- `analyze-v2.st`: stricter anti-hallucination rules, score rubric, React≠Angular / Spark≠Kafka examples, short resume-grounded skill names.
+- Small local models still ignore prompts sometimes → `AnalysisService` evidence filter + score dampening/floor (prompt + light code guardrails).
+- Side-by-side: React/Node 80→35 (no invented matched skills); Data Engineer 70→35 (Spark/Airflow hallucinations dropped); Java backend stays ~80.
+- Switch prompt via `app.prompts.analyze` (`analyze-v1.st` / `analyze-v2.st`).
 
 **Prompt to AI:** `Let's do Day 3` + bring 3 job descriptions and notes on what was wrong in today's analyze response.
 

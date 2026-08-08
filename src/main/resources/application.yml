@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   application:
@@ -21,6 +21,9 @@ spring:
 app:
   resume-char-limit: 4000
   job-description-char-limit: 4000
+  prompts:
+    analyze: analyze-v2.st
+    review: review-v1.st
   rag:
     chunk-size: 500
     chunk-overlap: 100

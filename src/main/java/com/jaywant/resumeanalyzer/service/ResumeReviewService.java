@@ -24,7 +24,7 @@ public class ResumeReviewService {
         String resume = TextTruncator.truncate(resumeText, appProperties.getResumeCharLimit());
 
         BeanOutputConverter<ResumeReviewResult> converter = new BeanOutputConverter<>(ResumeReviewResult.class);
-        String template = promptService.loadPrompt("review-v1.st");
+        String template = promptService.loadPrompt(appProperties.getPrompts().getReview());
         String prompt = promptService.render(template, Map.of(
                 "resume", resume,
                 "format", converter.getFormat()));

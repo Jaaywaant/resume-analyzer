@@ -13,7 +13,16 @@ public class AppProperties {
 
     private int resumeCharLimit = 4000;
     private int jobDescriptionCharLimit = 4000;
+    private Prompts prompts = new Prompts();
     private Rag rag = new Rag();
+
+    @Getter
+    @Setter
+    public static class Prompts {
+        /** Prompt template under classpath:/prompts/ (e.g. analyze-v1.st, analyze-v2.st). */
+        private String analyze = "analyze-v2.st";
+        private String review = "review-v1.st";
+    }
 
     @Getter
     @Setter
