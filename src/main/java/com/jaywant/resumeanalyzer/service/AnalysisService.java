@@ -5,6 +5,7 @@ import com.jaywant.resumeanalyzer.ai.PromptService;
 import com.jaywant.resumeanalyzer.ai.StructuredOutputClient;
 import com.jaywant.resumeanalyzer.config.AppProperties;
 import com.jaywant.resumeanalyzer.domain.AnalysisResult;
+import com.jaywant.resumeanalyzer.domain.LlmAnalysisPayload;
 import com.jaywant.resumeanalyzer.parser.TextTruncator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,23 +55,28 @@ public class AnalysisService {
     private final AtsKeywordService atsKeywordService;
 
     public AnalysisResult analyze(String resumeText, String jobDescription) {
+        return analyze(resumeText, jobDescription, appProperties.getRag().isEnabled());
+    }
+
+    public AnalysisResult analyze(String resumeText, String jobDescription, boolean useRag) {
         String resume = TextTruncator.truncate(resumeText, appProperties.getResumeCharLimit());
         String job = TextTruncator.truncate(jobDescription, appProperties.getJobDescriptionCharLimit());
-        String ragContext = ragService.buildContext(resume, job);
 
-        BeanOutputConverter<AnalysisResult> converter = new BeanOutputConverter<>(AnalysisResult.class);
+        RagService.RagRetrieval retrieval = ragService.retrieve(resume, job, useRag);
+
+        BeanOutputConverter<LlmAnalysisPayload> converter = new BeanOutputConverter<>(LlmAnalysisPayload.class);
         String promptFile = appProperties.getPrompts().getAnalyze();
-        log.info("Using analyze prompt template: {}", promptFile);
+        log.info("Using analyze prompt template: {} (rag={})", promptFile, useRag);
         String template = promptService.loadPrompt(promptFile);
         String prompt = promptService.render(template, Map.of(
                 "resume", resume,
                 "jobDescription", job,
-                "ragContext", ragContext.isBlank() ? "No additional context retrieved." : ragContext,
+                "ragContext", retrieval.isEmpty() ? "No additional context retrieved." : retrieval.promptContext(),
                 "format", converter.getFormat()));
 
-        AnalysisResult result = structuredOutputClient.generate(
+        LlmAnalysisPayload result = structuredOutputClient.generate(
                 prompt,
-                AnalysisResult.class,
+                LlmAnalysisPayload.class,
                 analysisOutputValidator::validateRawAnalysisJson,
                 analysisOutputValidator::validateAnalysis);
 
@@ -91,7 +97,8 @@ public class AnalysisService {
                 result.experienceFit().strip(),
                 safeList(result.topSuggestions()),
                 found,
-                atsMissing);
+                atsMissing,
+                retrieval.citations());
     }
 
     /**

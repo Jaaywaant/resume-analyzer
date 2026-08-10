@@ -4,6 +4,7 @@ import com.jaywant.resumeanalyzer.domain.AnalysisResult;
 import com.jaywant.resumeanalyzer.service.AnalysisService;
 import com.jaywant.resumeanalyzer.service.DocumentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -26,11 +27,15 @@ public class AnalysisController {
     private final AnalysisService analysisService;
 
     @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Analyze resume against a job description")
+    @Operation(summary = "Analyze resume against a job description",
+            description = "Returns match analysis plus RAG citations. Set useRag=false to compare without retrieval.")
     public AnalysisResult analyze(
             @RequestPart("resume") MultipartFile resume,
-            @RequestPart("jobDescription") @NotBlank String jobDescription) {
+            @RequestPart("jobDescription") @NotBlank String jobDescription,
+            @Parameter(description = "When false, skips embedding retrieval (RAG off). Default true.")
+            @RequestPart(value = "useRag", required = false) String useRag) {
         String resumeText = documentService.extractText(resume);
-        return analysisService.analyze(resumeText, jobDescription);
+        boolean ragEnabled = useRag == null || !useRag.equalsIgnoreCase("false");
+        return analysisService.analyze(resumeText, jobDescription, ragEnabled);
     }
 }

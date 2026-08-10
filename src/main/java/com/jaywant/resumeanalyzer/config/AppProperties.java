@@ -27,8 +27,10 @@ public class AppProperties {
     @Getter
     @Setter
     public static class Rag {
-        private int chunkSize = 500;
-        private int chunkOverlap = 100;
-        private int topK = 4;
+        /** When false, analyze skips embedding retrieval (useful to compare RAG on vs off). */
+        private boolean enabled = true;
+        private int chunkSize = 400;
+        private int chunkOverlap = 80;
+        private int topK = 5;
     }
 }

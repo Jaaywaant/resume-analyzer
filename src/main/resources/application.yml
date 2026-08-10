@@ -25,9 +25,10 @@ app:
     analyze: analyze-v2.st
     review: review-v1.st
   rag:
-    chunk-size: 500
-    chunk-overlap: 100
-    top-k: 4
+    enabled: true
+    chunk-size: 400
+    chunk-overlap: 80
+    top-k: 5
 
 springdoc:
   api-docs:

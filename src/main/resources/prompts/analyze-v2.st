@@ -15,8 +15,9 @@ REQUIRED JSON FIELDS:
 - missingSkills: array of strings (required; use [] if none)
 - experienceFit: non-empty string (required)
 - topSuggestions: array of strings (required; prefer 3 items)
-- atsKeywordsFound: array of strings
-- atsKeywordsMissing: array of strings
+
+Use Retrieved context (RAG) only as hints to locate resume evidence. Do not invent facts from it.
+Citations and ATS keyword lists are added by the application — do not invent them.
 
 Scoring:
 - 80-100: same primary stack, most must-haves present
@@ -38,6 +39,6 @@ Resume:
 Job description:
 {jobDescription}
 
-Task: score the match, list matchedSkills and missingSkills, write experienceFit, give 3 topSuggestions, and fill atsKeywordsFound/atsKeywordsMissing.
+Task: score the match, list matchedSkills and missingSkills, write experienceFit, and give 3 topSuggestions.
 
 {format}
