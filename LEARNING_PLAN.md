@@ -16,7 +16,7 @@
 | 3 | Prompt engineering deep dive | ✅ Done |
 | 4 | Structured output & guardrails | ✅ Done |
 | 5 | LLM evaluation tests | ✅ Done |
-| 6 | RAG deep dive + citations | ⬜ |
+| 6 | RAG deep dive + citations | ✅ Done |
 | 7 | JD URL scraping (hybrid AI) | ⬜ |
 | 8 | Function calling / `@Tool` | ⬜ |
 | 9 | Simple UI + Docker | ⬜ |
@@ -144,6 +144,12 @@ Create fixed inputs; check outputs fall in expected ranges. No model retraining 
 3. Optional: flag to compare analysis with RAG on vs off
 
 **Deliverable:** Response includes citations; can explain RAG in an interview.
+
+**Day 6 notes (completed):**
+- `Citation` on `AnalysisResult` (source, excerpt, similarityScore) filled by code from embedding retrieval — not invented by the LLM.
+- Tuned RAG defaults: `chunk-size=400`, `chunk-overlap=80`, `top-k=5`; chunker prefers paragraph/sentence boundaries.
+- Compare RAG on vs off via multipart field `useRag=false` (or `app.rag.enabled` in yml).
+- LLM schema moved to `LlmAnalysisPayload`; ATS + citations attached after retrieval/analysis.
 
 **Prompt to AI:** `Let's do Day 6`
 

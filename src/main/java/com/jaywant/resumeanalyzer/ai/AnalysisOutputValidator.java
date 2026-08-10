@@ -2,7 +2,7 @@ package com.jaywant.resumeanalyzer.ai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jaywant.resumeanalyzer.domain.AnalysisResult;
+import com.jaywant.resumeanalyzer.domain.LlmAnalysisPayload;
 import com.jaywant.resumeanalyzer.domain.ResumeReviewResult;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +27,7 @@ public class AnalysisOutputValidator {
         requireArray(root, "topSuggestions");
     }
 
-    public void validateAnalysis(AnalysisResult result) {
+    public void validateAnalysis(LlmAnalysisPayload result) {
         if (result == null) {
             throw new StructuredOutputException("Analysis result is null");
         }

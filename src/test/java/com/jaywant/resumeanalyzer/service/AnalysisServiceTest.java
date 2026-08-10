@@ -5,6 +5,8 @@ import com.jaywant.resumeanalyzer.ai.PromptService;
 import com.jaywant.resumeanalyzer.ai.StructuredOutputClient;
 import com.jaywant.resumeanalyzer.config.AppProperties;
 import com.jaywant.resumeanalyzer.domain.AnalysisResult;
+import com.jaywant.resumeanalyzer.domain.Citation;
+import com.jaywant.resumeanalyzer.domain.LlmAnalysisPayload;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,18 +22,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
  * Golden-dataset evaluation for {@link AnalysisService}.
- *
- * <p>These tests use fixed resume/JD fixtures under {@code src/test/resources/samples/}
- * and stub the LLM layer with representative model outputs. Assertions check quality
- * bands (score ranges + required skills), not brittle exact strings from a live model.
  *
  * <p>Expected score bands (documented for regression):
  * <ul>
@@ -66,7 +66,10 @@ class AnalysisServiceTest {
         job2 = loadSample("job-2.txt");
         job3 = loadSample("job-3.txt");
 
-        when(ragService.buildContext(anyString(), anyString())).thenReturn("No additional context retrieved.");
+        when(ragService.retrieve(anyString(), anyString(), anyBoolean()))
+                .thenReturn(new RagService.RagRetrieval(
+                        "No additional context retrieved.",
+                        List.of(new Citation("resume", "Java Spring Boot experience", 0.81))));
 
         analysisService = new AnalysisService(
                 structuredOutputClient,
@@ -80,14 +83,12 @@ class AnalysisServiceTest {
     @Test
     @DisplayName("job-1 good Java match: score 60–85 and matchedSkills contains Java")
     void goodJavaMatch_scoreInRange_andContainsJava() {
-        stubLlm(new AnalysisResult(
+        stubLlm(new LlmAnalysisPayload(
                 78,
                 List.of("Java", "Spring Boot", "REST APIs", "SQL", "Docker", "Git"),
                 List.of("PostgreSQL"),
                 "Strong Java/Spring backend fit for an SDE-1 role.",
-                List.of("Call out Kafka metrics more clearly", "Mention Agile ceremonies", "Quantify API latency wins"),
-                List.of(),
-                List.of()));
+                List.of("Call out Kafka metrics more clearly", "Mention Agile ceremonies", "Quantify API latency wins")));
 
         AnalysisResult result = analysisService.analyze(resume, job1);
 
@@ -99,20 +100,19 @@ class AnalysisServiceTest {
                 containsIgnoreCase(result.matchedSkills(), "Java"),
                 "matchedSkills should contain Java, got: " + result.matchedSkills());
         assertTrue(containsIgnoreCase(result.atsKeywordsFound(), "java"));
+        assertEquals(1, result.citations().size());
+        assertEquals("resume", result.citations().get(0).source());
     }
 
     @Test
     @DisplayName("job-2 React/Node mismatch: score ≤45 and React not kept as matched")
     void reactNodeMismatch_scoreDampened_andDropsHallucinatedReact() {
-        // Simulate a generous/hallucinating model — pipeline must correct it.
-        stubLlm(new AnalysisResult(
+        stubLlm(new LlmAnalysisPayload(
                 80,
                 List.of("React.js", "Node.js", "Express", "CSS", "REST APIs"),
                 List.of("Next.js", "GraphQL"),
                 "Candidate has React and Node experience.",
-                List.of("Add Next.js projects", "Learn GraphQL", "Highlight CI/CD"),
-                List.of(),
-                List.of()));
+                List.of("Add Next.js projects", "Learn GraphQL", "Highlight CI/CD")));
 
         AnalysisResult result = analysisService.analyze(resume, job2);
 
@@ -128,14 +128,12 @@ class AnalysisServiceTest {
     @Test
     @DisplayName("job-3 data-engineer mismatch: score ≤45 and Spark not kept as matched")
     void dataEngineerMismatch_scoreLow_andDropsHallucinatedSpark() {
-        stubLlm(new AnalysisResult(
+        stubLlm(new LlmAnalysisPayload(
                 70,
                 List.of("data engineering", "Apache Spark", "Airflow", "SQL", "Snowflake"),
                 List.of("dbt", "Kubernetes"),
                 "Candidate looks like a data engineer.",
-                List.of("Add Spark projects", "Learn Airflow", "Highlight warehouses"),
-                List.of(),
-                List.of()));
+                List.of("Add Spark projects", "Learn Airflow", "Highlight warehouses")));
 
         AnalysisResult result = analysisService.analyze(resume, job3);
 
@@ -147,18 +145,16 @@ class AnalysisServiceTest {
                 "Spark must not remain in matchedSkills without resume evidence");
         assertFalse(containsIgnoreCase(result.matchedSkills(), "Airflow"));
         assertTrue(
-                containsIgnoreCase(result.matchedSkills(), "SQL")
-                        || result.matchedSkills().stream().anyMatch(s -> s.equalsIgnoreCase("SQL")),
+                containsIgnoreCase(result.matchedSkills(), "SQL"),
                 "SQL overlap may remain when evidenced; got: " + result.matchedSkills());
     }
 
-    @SuppressWarnings("unchecked")
-    private void stubLlm(AnalysisResult llmResult) {
+    private void stubLlm(LlmAnalysisPayload llmResult) {
         when(structuredOutputClient.generate(
                 anyString(),
-                eq(AnalysisResult.class),
+                eq(LlmAnalysisPayload.class),
                 ArgumentMatchers.<Consumer<String>>any(),
-                ArgumentMatchers.<Consumer<AnalysisResult>>any()))
+                ArgumentMatchers.<Consumer<LlmAnalysisPayload>>any()))
                 .thenReturn(llmResult);
     }
 

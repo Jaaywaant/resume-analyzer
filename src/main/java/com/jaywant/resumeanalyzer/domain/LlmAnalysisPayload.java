@@ -2,13 +2,13 @@ package com.jaywant.resumeanalyzer.domain;
 
 import java.util.List;
 
-public record AnalysisResult(
+/**
+ * Structured fields produced by the LLM. ATS keywords and RAG citations are filled in code.
+ */
+public record LlmAnalysisPayload(
         int matchScore,
         List<String> matchedSkills,
         List<String> missingSkills,
         String experienceFit,
-        List<String> topSuggestions,
-        List<String> atsKeywordsFound,
-        List<String> atsKeywordsMissing,
-        List<Citation> citations) {
+        List<String> topSuggestions) {
 }

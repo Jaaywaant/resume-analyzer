@@ -1,7 +1,7 @@
 package com.jaywant.resumeanalyzer.ai;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jaywant.resumeanalyzer.domain.AnalysisResult;
+import com.jaywant.resumeanalyzer.domain.LlmAnalysisPayload;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -22,20 +22,16 @@ class AnalysisOutputValidatorTest {
                   "matchedSkills": ["Java"],
                   "missingSkills": ["Kubernetes"],
                   "experienceFit": "Solid Java backend fit.",
-                  "topSuggestions": ["Add Kafka metrics"],
-                  "atsKeywordsFound": ["java"],
-                  "atsKeywordsMissing": ["kubernetes"]
+                  "topSuggestions": ["Add Kafka metrics"]
                 }
                 """;
         assertDoesNotThrow(() -> validator.validateRawAnalysisJson(json));
-        assertDoesNotThrow(() -> validator.validateAnalysis(new AnalysisResult(
+        assertDoesNotThrow(() -> validator.validateAnalysis(new LlmAnalysisPayload(
                 72,
                 List.of("Java"),
                 List.of("Kubernetes"),
                 "Solid Java backend fit.",
-                List.of("Add Kafka metrics"),
-                List.of("java"),
-                List.of("kubernetes"))));
+                List.of("Add Kafka metrics"))));
     }
 
     @Test
