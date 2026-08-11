@@ -228,6 +228,22 @@ curl -X POST http://localhost:8081/api/v1/analyze \
 
 ---
 
+## Future scope
+
+This project is intentionally local-first and demo-scale. Planned enhancements:
+
+- **Faster / stronger local models** — evaluate smaller or quantized chat models (and newer Ollama releases) for lower latency while keeping structured-output quality.
+- **User-selectable models** — let users choose chat and embedding models from those available in Ollama (UI dropdown + API/config override) instead of a single hardcoded default.
+- **Persistent vector store** — move from per-request in-memory embeddings to a durable store (e.g. pgvector) so RAG scales beyond single-session demos.
+- **Richer job ingestion** — improve URL scraping for JS-heavy boards (browser fallback) and support paste helpers when scrape fails.
+- **Async analysis** — queue long-running LLM jobs and poll/stream progress so the UI doesn’t block on slow local inference.
+- **Deeper evaluation** — expand the golden set, add LLM-as-judge spot checks, and gate CI on score-band regressions.
+- **Production hardening** — auth, rate limits, PII-safe logging, retention policies, and metrics (latency, token usage, scrape/LLM failure rates).
+- **Optional cloud failover** — keep Ollama as default; fall back to a hosted model when local quality or availability is insufficient.
+- **UI polish** — side-by-side JD comparison, history of past analyses, and exportable match reports (PDF/Markdown).
+
+---
+
 ## Learning journal
 
 This repo was built across a structured 10-day plan (prompting → structured output → eval → RAG → hybrid scrape → tools → UI/Docker → portfolio). See [`LEARNING_PLAN.md`](LEARNING_PLAN.md) for the day-by-day notes and glossary.
