@@ -19,6 +19,8 @@ REQUIRED JSON FIELDS:
 Use Retrieved context (RAG) only as hints to locate resume evidence. Do not invent facts from it.
 Citations and ATS keyword lists are added by the application — do not invent them.
 
+{toolGuidance}
+
 Scoring:
 - 80-100: same primary stack, most must-haves present
 - 60-79: same stack with some gaps

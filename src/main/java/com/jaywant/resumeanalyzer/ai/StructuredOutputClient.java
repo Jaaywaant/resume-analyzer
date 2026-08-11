@@ -20,9 +20,22 @@ public class StructuredOutputClient {
     private final ChatClient.Builder chatClientBuilder;
 
     public <T> T generate(String prompt, Class<T> type, Consumer<String> rawJsonValidator, Consumer<T> entityValidator) {
+        return generate(prompt, type, rawJsonValidator, entityValidator, (Object[]) null);
+    }
+
+    /**
+     * Same as {@link #generate(String, Class, Consumer, Consumer)} but optionally registers
+     * Spring AI {@code @Tool} beans so the model can call Java methods mid-response.
+     */
+    public <T> T generate(
+            String prompt,
+            Class<T> type,
+            Consumer<String> rawJsonValidator,
+            Consumer<T> entityValidator,
+            Object... toolObjects) {
         BeanOutputConverter<T> converter = new BeanOutputConverter<>(type);
         try {
-            return attempt(prompt, converter, type, rawJsonValidator, entityValidator);
+            return attempt(prompt, converter, type, rawJsonValidator, entityValidator, toolObjects);
         }
         catch (StructuredOutputException firstFailure) {
             log.warn("Structured output attempt failed for {}; retrying once: {}", type.getSimpleName(), firstFailure.getMessage());
@@ -31,7 +44,7 @@ public class StructuredOutputClient {
                     + firstFailure.getMessage()
                     + "\nReturn ONLY corrected valid JSON that matches the schema. No markdown fences, no commentary.";
             try {
-                return attempt(retryPrompt, converter, type, rawJsonValidator, entityValidator);
+                return attempt(retryPrompt, converter, type, rawJsonValidator, entityValidator, toolObjects);
             }
             catch (StructuredOutputException secondFailure) {
                 throw new StructuredOutputException(
@@ -49,13 +62,18 @@ public class StructuredOutputClient {
             BeanOutputConverter<T> converter,
             Class<T> type,
             Consumer<String> rawJsonValidator,
-            Consumer<T> entityValidator) {
+            Consumer<T> entityValidator,
+            Object[] toolObjects) {
         String content;
         try {
-            content = chatClientBuilder.build()
-                    .prompt(prompt)
-                    .call()
-                    .content();
+            var request = chatClientBuilder.build().prompt(prompt);
+            if (hasTools(toolObjects)) {
+                log.info("LLM call with {} tool object(s) enabled", toolObjects.length);
+                content = request.tools(toolObjects).call().content();
+            }
+            else {
+                content = request.call().content();
+            }
         }
         catch (Exception ex) {
             throw new StructuredOutputException("LLM call failed: " + ex.getMessage(), ex);
@@ -84,6 +102,18 @@ public class StructuredOutputClient {
 
         entityValidator.accept(parsed);
         return parsed;
+    }
+
+    private static boolean hasTools(Object[] toolObjects) {
+        if (toolObjects == null || toolObjects.length == 0) {
+            return false;
+        }
+        for (Object tool : toolObjects) {
+            if (tool != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

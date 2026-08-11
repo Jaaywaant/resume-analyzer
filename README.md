@@ -7,9 +7,11 @@ Analyze a resume against a job description, get ATS keyword coverage, and receiv
 ## Features
 
 - `POST /api/v1/analyze` — resume vs job description match report (structured JSON)
+- `POST /api/v1/analyze-from-url` — resume vs public job posting URL (Jsoup scrape + analyze)
 - `POST /api/v1/resume/review` — standalone resume critique
 - `GET /api/v1/health/ollama` — verify Ollama and required models
 - PDF/DOCX parsing via Apache Tika
+- Job page scraping via Jsoup (hybrid: code for fetch/parse, LLM for reasoning)
 - RAG context retrieval with local embeddings (`nomic-embed-text`)
 - Deterministic ATS keyword matching (code + LLM)
 
@@ -32,31 +34,49 @@ ollama pull nomic-embed-text
 mvn spring-boot:run
 ```
 
-- API: `http://localhost:8080`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- API: `http://localhost:8081`
+- Swagger UI: `http://localhost:8081/swagger-ui.html`
 
 ## Quick test (curl)
 
 Health check:
 
 ```bash
-curl http://localhost:8080/api/v1/health/ollama
+curl http://localhost:8081/api/v1/health/ollama
 ```
 
 Analyze resume:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/analyze \
+curl -X POST http://localhost:8081/api/v1/analyze \
   -F "resume=@/path/to/resume.pdf" \
   -F "jobDescription=We need a Java backend developer with Spring Boot, REST APIs, and SQL experience."
+```
+
+Compare without tools (function calling off):
+
+```bash
+curl -X POST http://localhost:8081/api/v1/analyze \
+  -F "resume=@/path/to/resume.pdf" \
+  -F "jobDescription=We need a Java backend developer with Spring Boot, REST APIs, and SQL experience." \
+  -F "useTools=false"
+```
+
+Analyze from job URL:
+
+```bash
+curl -X POST http://localhost:8081/api/v1/analyze-from-url \
+  -F "resume=@/path/to/resume.pdf" \
+  -F "jobUrl=https://example.com/jobs/senior-java-engineer"
 ```
 
 Resume-only review:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/resume/review \
+curl -X POST http://localhost:8081/api/v1/resume/review \
   -F "resume=@/path/to/resume.pdf"
 ```
+
 
 ## Project structure
 
@@ -76,6 +96,8 @@ com.jaywant.resumeanalyzer
 - Structured JSON output via Spring AI `BeanOutputConverter`
 - RAG with embeddings + vector similarity search
 - Hybrid LLM + deterministic ATS keyword scoring
+- Hybrid code vs LLM pipelines (URL scrape with Jsoup, then LLM analysis)
+- Spring AI function calling (`@Tool`: extractSkills, scoreAtsKeywords, normalizeSkill)
 - Local inference with Ollama (free, private)
 
 ## 2-week learning path

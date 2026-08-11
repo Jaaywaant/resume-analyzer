@@ -29,6 +29,12 @@ app:
     chunk-size: 400
     chunk-overlap: 80
     top-k: 5
+  scraper:
+    timeout-ms: 10000
+    min-text-length: 80
+    user-agent: ResumeAnalyzer/0.1 (+https://github.com/Jaaywaant/resume-analyzer; local learning project)
+  tools:
+    enabled: true
 
 springdoc:
   api-docs:

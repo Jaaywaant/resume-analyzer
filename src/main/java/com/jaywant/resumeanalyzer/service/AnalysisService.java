@@ -1,6 +1,7 @@
 package com.jaywant.resumeanalyzer.service;
 
 import com.jaywant.resumeanalyzer.ai.AnalysisOutputValidator;
+import com.jaywant.resumeanalyzer.ai.AnalysisTools;
 import com.jaywant.resumeanalyzer.ai.PromptService;
 import com.jaywant.resumeanalyzer.ai.StructuredOutputClient;
 import com.jaywant.resumeanalyzer.config.AppProperties;
@@ -47,18 +48,38 @@ public class AnalysisService {
             "job", "title", "skills", "experience", "development", "engineer", "developer",
             "required", "preferred", "strong", "looking", "need", "years", "team", "work");
 
+    private static final String TOOL_GUIDANCE_ON = """
+            TOOLS (optional but preferred when available):
+            - Call extractSkills on the Resume and Job description before listing skills.
+            - Call scoreAtsKeywords(resume, job) to ground matchScore in keyword coverage.
+            - Call normalizeSkill for skill names before putting them in matchedSkills/missingSkills.
+            After any tool calls, still return ONLY the required JSON as the final answer.
+            """;
+
+    private static final String TOOL_GUIDANCE_OFF =
+            "Tools are disabled for this request. Rely on the Resume and Job text alone.";
+
     private final StructuredOutputClient structuredOutputClient;
     private final AnalysisOutputValidator analysisOutputValidator;
     private final PromptService promptService;
     private final RagService ragService;
     private final AppProperties appProperties;
     private final AtsKeywordService atsKeywordService;
+    private final AnalysisTools analysisTools;
 
     public AnalysisResult analyze(String resumeText, String jobDescription) {
-        return analyze(resumeText, jobDescription, appProperties.getRag().isEnabled());
+        return analyze(
+                resumeText,
+                jobDescription,
+                appProperties.getRag().isEnabled(),
+                appProperties.getTools().isEnabled());
     }
 
     public AnalysisResult analyze(String resumeText, String jobDescription, boolean useRag) {
+        return analyze(resumeText, jobDescription, useRag, appProperties.getTools().isEnabled());
+    }
+
+    public AnalysisResult analyze(String resumeText, String jobDescription, boolean useRag, boolean useTools) {
         String resume = TextTruncator.truncate(resumeText, appProperties.getResumeCharLimit());
         String job = TextTruncator.truncate(jobDescription, appProperties.getJobDescriptionCharLimit());
 
@@ -66,19 +87,31 @@ public class AnalysisService {
 
         BeanOutputConverter<LlmAnalysisPayload> converter = new BeanOutputConverter<>(LlmAnalysisPayload.class);
         String promptFile = appProperties.getPrompts().getAnalyze();
-        log.info("Using analyze prompt template: {} (rag={})", promptFile, useRag);
+        log.info("Using analyze prompt template: {} (rag={}, tools={})", promptFile, useRag, useTools);
         String template = promptService.loadPrompt(promptFile);
         String prompt = promptService.render(template, Map.of(
                 "resume", resume,
                 "jobDescription", job,
                 "ragContext", retrieval.isEmpty() ? "No additional context retrieved." : retrieval.promptContext(),
+                "toolGuidance", useTools ? TOOL_GUIDANCE_ON : TOOL_GUIDANCE_OFF,
                 "format", converter.getFormat()));
 
-        LlmAnalysisPayload result = structuredOutputClient.generate(
-                prompt,
-                LlmAnalysisPayload.class,
-                analysisOutputValidator::validateRawAnalysisJson,
-                analysisOutputValidator::validateAnalysis);
+        LlmAnalysisPayload result;
+        if (useTools) {
+            result = structuredOutputClient.generate(
+                    prompt,
+                    LlmAnalysisPayload.class,
+                    analysisOutputValidator::validateRawAnalysisJson,
+                    analysisOutputValidator::validateAnalysis,
+                    analysisTools);
+        }
+        else {
+            result = structuredOutputClient.generate(
+                    prompt,
+                    LlmAnalysisPayload.class,
+                    analysisOutputValidator::validateRawAnalysisJson,
+                    analysisOutputValidator::validateAnalysis);
+        }
 
         List<String> rawMatched = safeList(result.matchedSkills());
         List<String> matched = keepEvidenced(resume, rawMatched);

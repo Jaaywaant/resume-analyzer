@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AnalysisServiceEvidenceTest {
 
-    private final AnalysisService service = new AnalysisService(null, null, null, null, null, null);
+    private final AnalysisService service = new AnalysisService(null, null, null, null, null, null, null);
 
     private static final String RESUME = """
             Java Spring Boot Kafka AWS Docker MySQL JUnit Mockito Angular REST APIs

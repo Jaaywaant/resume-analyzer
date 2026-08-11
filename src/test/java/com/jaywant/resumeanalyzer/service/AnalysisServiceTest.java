@@ -1,6 +1,7 @@
 package com.jaywant.resumeanalyzer.service;
 
 import com.jaywant.resumeanalyzer.ai.AnalysisOutputValidator;
+import com.jaywant.resumeanalyzer.ai.AnalysisTools;
 import com.jaywant.resumeanalyzer.ai.PromptService;
 import com.jaywant.resumeanalyzer.ai.StructuredOutputClient;
 import com.jaywant.resumeanalyzer.config.AppProperties;
@@ -77,7 +78,8 @@ class AnalysisServiceTest {
                 new PromptService(),
                 ragService,
                 new AppProperties(),
-                new AtsKeywordService());
+                new AtsKeywordService(),
+                new AnalysisTools(new AtsKeywordService()));
     }
 
     @Test
@@ -150,11 +152,13 @@ class AnalysisServiceTest {
     }
 
     private void stubLlm(LlmAnalysisPayload llmResult) {
+        // Default app.tools.enabled=true → AnalysisService calls the tools overload.
         when(structuredOutputClient.generate(
                 anyString(),
                 eq(LlmAnalysisPayload.class),
                 ArgumentMatchers.<Consumer<String>>any(),
-                ArgumentMatchers.<Consumer<LlmAnalysisPayload>>any()))
+                ArgumentMatchers.<Consumer<LlmAnalysisPayload>>any(),
+                ArgumentMatchers.any()))
                 .thenReturn(llmResult);
     }
 

@@ -21,6 +21,7 @@
         <java.version>17</java.version>
         <spring-ai.version>1.0.0</spring-ai.version>
         <tika.version>2.9.2</tika.version>
+        <jsoup.version>1.18.3</jsoup.version>
         <springdoc.version>2.8.6</springdoc.version>
     </properties>
 
@@ -58,6 +59,11 @@
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parsers-standard-package</artifactId>
             <version>${tika.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${jsoup.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>

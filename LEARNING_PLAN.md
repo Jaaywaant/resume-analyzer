@@ -17,8 +17,8 @@
 | 4 | Structured output & guardrails | ✅ Done |
 | 5 | LLM evaluation tests | ✅ Done |
 | 6 | RAG deep dive + citations | ✅ Done |
-| 7 | JD URL scraping (hybrid AI) | ⬜ |
-| 8 | Function calling / `@Tool` | ⬜ |
+| 7 | JD URL scraping (hybrid AI) | ✅ Done |
+| 8 | Function calling / `@Tool` | ✅ Done |
 | 9 | Simple UI + Docker | ⬜ |
 | 10 | Portfolio polish + demo | ⬜ |
 
@@ -179,6 +179,11 @@ Create fixed inputs; check outputs fall in expected ranges. No model retraining 
 
 **Deliverable:** Analyze from URL works in Swagger.
 
+**Notes (Day 7):**
+- Hybrid split: `JobDescriptionScraperService` (Jsoup) fetches/cleans HTML; `AnalysisService` does LLM matching.
+- Endpoint: `POST /api/v1/analyze-from-url` with multipart `resume` + `jobUrl` (+ optional `useRag`).
+- Scrape failures → `502` with hint to paste JD into `/analyze` instead (login walls / JS SPAs).
+
 **Prompt to AI:** `Let's do Day 7`
 
 ---
@@ -202,6 +207,12 @@ LLM decides when to call your Java methods. Example: calls `scoreAtsKeywords()` 
 3. Compare output with and without tools
 
 **Deliverable:** Analysis uses tools; understand when each helps.
+
+**Notes (Day 8):**
+- `AnalysisTools`: `extractSkills`, `scoreAtsKeywords`, `normalizeSkill` annotated with `@Tool`.
+- Wired via `ChatClient.prompt(...).tools(analysisTools)` inside `StructuredOutputClient`.
+- Compare in Swagger: `useTools=true` (default) vs `useTools=false` on `/analyze`.
+- Tool vs RAG: RAG retrieves resume chunks; tools run deterministic Java logic the model can request.
 
 **Prompt to AI:** `Let's do Day 8`
 
@@ -298,8 +309,8 @@ cd C:\Users\JaywantKadam\Desktop\private\Project\resume-analyzer
 |--------|----------|---------|
 | GET | `/api/v1/health/ollama` | Check Ollama + models |
 | POST | `/api/v1/analyze` | Resume vs JD (multipart) |
+| POST | `/api/v1/analyze-from-url` | Resume vs job URL (scrape + analyze) |
 | POST | `/api/v1/resume/review` | Standalone resume critique |
 
 **Planned (by day):**
-- Day 7: `POST /api/v1/analyze-from-url`
 - Day 9: Web UI at `/`
