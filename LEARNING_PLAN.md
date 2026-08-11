@@ -19,7 +19,7 @@
 | 6 | RAG deep dive + citations | ✅ Done |
 | 7 | JD URL scraping (hybrid AI) | ✅ Done |
 | 8 | Function calling / `@Tool` | ✅ Done |
-| 9 | Simple UI + Docker | ⬜ |
+| 9 | Simple UI + Docker | ✅ Done |
 | 10 | Portfolio polish + demo | ⬜ |
 
 **Daily time:** ~1.5–2 hours weekdays, ~3 hours weekends (~15–20 hours total).
@@ -238,6 +238,12 @@ LLM decides when to call your Java methods. Example: calls `scoreAtsKeywords()` 
 
 **Deliverable:** UI works locally; Docker documented.
 
+**Notes (Day 9):**
+- Thymeleaf UI at `/` — upload resume, paste JD or job URL, show results (RAG + tools always on).
+- Session keeps the last resume so re-analyze does not require re-upload; loading overlay while analyzing.
+- `docker-compose.yml`: `ollama` + `ollama-init` (pulls models) + `app`.
+- First Docker run can take a while while models download.
+
 **Prompt to AI:** `Let's do Day 9`
 
 ---
@@ -307,10 +313,12 @@ cd C:\Users\JaywantKadam\Desktop\private\Project\resume-analyzer
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
+| GET | `/` | Thymeleaf upload UI |
+| POST | `/analyze-ui` | Form submit → analyze + render results |
 | GET | `/api/v1/health/ollama` | Check Ollama + models |
 | POST | `/api/v1/analyze` | Resume vs JD (multipart) |
 | POST | `/api/v1/analyze-from-url` | Resume vs job URL (scrape + analyze) |
 | POST | `/api/v1/resume/review` | Standalone resume critique |
 
 **Planned (by day):**
-- Day 9: Web UI at `/`
+- Day 10: portfolio polish (README / demo)
