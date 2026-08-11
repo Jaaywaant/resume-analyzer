@@ -1,11 +1,11 @@
 # 10-Day Resume Analyzer — Learn + Build Plan
 
-> **For AI assistant:** When the user says "Let's do Day X", read this file and continue from that day's section.
+> Day-by-day journal for building this project. For the **interview-facing overview**, start with [`README.md`](README.md).
 >
-> **Repo:** https://github.com/Jaaywaant/resume-analyzer
-> **Local path:** `C:\Users\JaywantKadam\Desktop\private\Project\resume-analyzer`
-> **Stack:** Java 17+, Spring Boot 3, Spring AI, Ollama (llama3.2 + nomic-embed-text)
-
+> **Repo:** https://github.com/Jaaywaant/resume-analyzer  
+> **Stack:** Java 17+, Spring Boot 3, Spring AI, Ollama (`llama3.2` + `nomic-embed-text`)
+>
+> **For AI assistant:** When the user says "Let's do Day X", read this file and continue from that day's section.
 ---
 
 ## Progress Tracker
@@ -20,7 +20,7 @@
 | 7 | JD URL scraping (hybrid AI) | ✅ Done |
 | 8 | Function calling / `@Tool` | ✅ Done |
 | 9 | Simple UI + Docker | ✅ Done |
-| 10 | Portfolio polish + demo | ⬜ |
+| 10 | Portfolio polish + demo | ✅ Done |
 
 **Daily time:** ~1.5–2 hours weekdays, ~3 hours weekends (~15–20 hours total).
 
@@ -266,6 +266,11 @@ LLM decides when to call your Java methods. Example: calls `scoreAtsKeywords()` 
 
 **Deliverable:** Portfolio-ready repo for interviews.
 
+**Notes (Day 10):**
+- README rewritten as interview showcase: pitch, architecture diagram, concepts table, trade-offs, golden-set eval, talking points.
+- MIT `LICENSE` added; learning journal kept in this file for depth.
+- UI polish carried from Day 9: no RAG/tools toggles, loading overlay, session resume, citations hidden in UI (still on API).
+
 **Prompt to AI:** `Let's do Day 10`
 
 ---
@@ -292,8 +297,9 @@ cd C:\Users\JaywantKadam\Desktop\private\Project\resume-analyzer
 .\mvnw.cmd spring-boot:run
 ```
 
-- Swagger UI: http://localhost:8080/swagger-ui.html
-- Health: http://localhost:8080/api/v1/health/ollama
+- UI: http://localhost:8081/
+- Swagger UI: http://localhost:8081/swagger-ui.html
+- Health: http://localhost:8081/api/v1/health/ollama
 
 **Ollama:** Usually runs in background. If `ollama serve` says port in use, Ollama is already running.
 
@@ -320,5 +326,4 @@ cd C:\Users\JaywantKadam\Desktop\private\Project\resume-analyzer
 | POST | `/api/v1/analyze-from-url` | Resume vs job URL (scrape + analyze) |
 | POST | `/api/v1/resume/review` | Standalone resume critique |
 
-**Planned (by day):**
-- Day 10: portfolio polish (README / demo)
+**Status:** Days 1–10 delivered. Portfolio README is the public entry point for interviewers.

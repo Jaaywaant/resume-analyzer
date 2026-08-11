@@ -40,3 +40,6 @@ Thumbs.db
 *.log
 uploads/
 tmp-day3/
+
+### Local-only interview prep (do not commit) ###
+local-interview-prep/

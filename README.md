@@ -1,147 +1,239 @@
 # Resume Analyzer
 
-Local-first AI resume analyzer built with **Java 17**, **Spring Boot 3**, **Spring AI**, and **Ollama**.
+**Local-first Gen AI resume ↔ job matcher** built with Java 17, Spring Boot 3, Spring AI, and Ollama.
 
-Analyze a resume against a job description, get ATS keyword coverage, and receive improvement suggestions — all running on your machine with no API keys.
+Upload a resume, paste a job description (or URL), and get a structured match report: score, skills gap, ATS keywords, and concrete rewrite suggestions — running entirely on your machine with **no cloud API keys**.
 
-## Features
+> Built as a 10-day hands-on Gen AI learning project. Designed so an interviewer can clone it, run it, and discuss real architecture choices — not just a chat-wrapper demo.
 
-- Web UI at `/` — upload resume, paste JD or job URL, view match results
-- `POST /api/v1/analyze` — resume vs job description match report (structured JSON)
-- `POST /api/v1/analyze-from-url` — resume vs public job posting URL (Jsoup scrape + analyze)
-- `POST /api/v1/resume/review` — standalone resume critique
-- `GET /api/v1/health/ollama` — verify Ollama and required models
-- PDF/DOCX parsing via Apache Tika
-- Job page scraping via Jsoup (hybrid: code for fetch/parse, LLM for reasoning)
-- RAG context retrieval with local embeddings (`nomic-embed-text`)
-- Deterministic ATS keyword matching (code + LLM)
-- Docker Compose for app + Ollama
+---
 
-## Prerequisites
+## 30-second pitch
 
-- Java 17+
-- Maven 3.9+
-- [Ollama](https://ollama.com) running locally
+| | |
+|---|---|
+| **Problem** | Job seekers need honest resume–JD fit feedback without leaking resumes to third-party APIs. |
+| **Approach** | Hybrid pipeline: deterministic code (parse, scrape, ATS, RAG retrieval) + LLM reasoning (fit narrative, suggestions) with structured JSON + guardrails. |
+| **Stack** | Spring Boot · Spring AI · Ollama (`llama3.2` + `nomic-embed-text`) · Jsoup · Tika · Thymeleaf · Docker Compose |
+| **Proof** | Golden-dataset tests, versioned prompts, RAG citations in API, `@Tool` function calling, runnable UI + Compose. |
 
-Pull required models:
+---
+
+## Quick demo
+
+**Prerequisites:** Java 17+, [Ollama](https://ollama.com)
 
 ```bash
 ollama pull llama3.2
 ollama pull nomic-embed-text
+./mvnw spring-boot:run
 ```
 
-## Run
+| Surface | URL |
+|---------|-----|
+| **Web UI** | http://localhost:8081/ |
+| **Swagger** | http://localhost:8081/swagger-ui.html |
+| **Health** | http://localhost:8081/api/v1/health/ollama |
 
-```bash
-mvn spring-boot:run
-```
-
-- UI: `http://localhost:8081/`
-- API: `http://localhost:8081`
-- Swagger UI: `http://localhost:8081/swagger-ui.html`
-
-## Run with Docker
-
-Requires [Docker](https://docs.docker.com/get-docker/) + Docker Compose.
+Or one command with Docker (app + Ollama + model pull):
 
 ```bash
 docker compose up --build
 ```
 
-What this starts:
+---
 
-| Service | Role |
-|---|---|
-| `ollama` | Local LLM + embeddings server on port `11434` |
-| `ollama-init` | One-shot pull of `llama3.2` and `nomic-embed-text` |
-| `app` | Spring Boot app on port `8081` |
+## Architecture
 
-Then open:
+```mermaid
+flowchart LR
+  subgraph Input
+    A[Resume PDF/DOCX]
+    B[JD text or URL]
+  end
 
-- UI: http://localhost:8081/
-- Swagger: http://localhost:8081/swagger-ui.html
-- Health: http://localhost:8081/api/v1/health/ollama
+  subgraph Deterministic["Code — deterministic"]
+    T[Tika extract]
+    S[Jsoup scrape + clean]
+    C[Chunk + embed]
+    R[Top-K retrieval]
+    K[ATS keyword match]
+    Tools["@Tool helpers"]
+  end
 
-Notes:
+  subgraph Probabilistic["LLM — reasoning"]
+    P[Versioned prompts]
+    L[Ollama llama3.2]
+    V[JSON schema + validate + retry]
+  end
 
-- First run downloads models (can take several minutes).
-- The app is configured with `SPRING_AI_OLLAMA_BASE_URL=http://ollama:11434` inside Compose.
-- Stop with `docker compose down` (add `-v` to also wipe the Ollama model volume).
-
-## Quick test (curl)
-
-Health check:
-
-```bash
-curl http://localhost:8081/api/v1/health/ollama
+  A --> T
+  B --> S
+  T --> C
+  S --> C
+  C --> R
+  T --> K
+  S --> K
+  R --> P
+  T --> P
+  S --> P
+  P --> L
+  Tools --> L
+  L --> V
+  K --> Out[AnalysisResult]
+  V --> Out
 ```
 
-Analyze resume:
+**Hybrid rule of thumb used in this repo**
+
+| Prefer code when… | Prefer LLM when… |
+|-------------------|------------------|
+| Fetching/parsing HTML, counting keywords, validating JSON shape | Scoring narrative fit, suggesting rewrites, normalizing fuzzy skill language |
+| You need the same answer every time | You need judgment over ambiguous text |
+
+---
+
+## Features
+
+- **Web UI** — upload resume, paste JD or job URL, loading state, session-cached resume
+- **Analyze API** — structured match report + ATS lists + RAG citations
+- **Analyze from URL** — scrape public job pages with Jsoup, then analyze
+- **Resume review** — standalone critique without a JD
+- **RAG** — chunk → embed (`nomic-embed-text`) → cosine top-K → prompt context + citations
+- **Tools** — Spring AI `@Tool`: `extractSkills`, `scoreAtsKeywords`, `normalizeSkill`
+- **Guardrails** — `BeanOutputConverter` schema, validation, one automatic retry; evidence filters drop hallucinated skills
+- **Docker Compose** — `app` + `ollama` + one-shot model pull
+
+### API
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/` | Thymeleaf UI |
+| `POST` | `/analyze-ui` | UI form → analysis |
+| `GET` | `/api/v1/health/ollama` | Ollama + required models |
+| `POST` | `/api/v1/analyze` | Resume vs JD (multipart; optional `useRag` / `useTools`) |
+| `POST` | `/api/v1/analyze-from-url` | Resume vs job URL |
+| `POST` | `/api/v1/resume/review` | Resume-only review |
+
+---
+
+## Gen AI concepts demonstrated
+
+| Concept | Where it shows up |
+|---------|-------------------|
+| Prompt engineering | Versioned templates `analyze-v1.st` → `analyze-v2.st` (stricter guardrails, few-shot scoring bands) |
+| Structured output | Spring AI `BeanOutputConverter` → `LlmAnalysisPayload` |
+| Guardrails / anti-hallucination | Schema validation + retry; post-LLM evidence checks against resume text |
+| RAG | `TextChunker` → embeddings → similarity search → citations on API result |
+| Function calling | `AnalysisTools` registered on `ChatClient.tools(...)` |
+| Hybrid AI | Scraper & ATS in Java; narrative & suggestions in the LLM |
+| Local inference | Ollama — private, free, no API keys; slower than hosted frontier models |
+| Evaluation | Golden samples under `src/test/resources/samples/` + score-band regression tests |
+| Packaging | Thymeleaf UI + multi-stage Dockerfile + Compose |
+
+---
+
+## Evaluation (golden dataset)
+
+Fixed fixtures in `src/test/resources/samples/`:
+
+| Sample JD | Intent | Expected band |
+|-----------|--------|---------------|
+| `job-1.txt` | Java / Spring backend — **good match** | score **60–85**, keep Java in matched skills |
+| `job-2.txt` | React / Node — **stack mismatch** | score **≤ 45**, drop hallucinated React/Node |
+| `job-3.txt` | Senior data eng (Spark/Airflow) — **mismatch** | score **≤ 45**, drop hallucinated Spark |
+
+Tests live in `AnalysisServiceTest` and related unit tests (`RagService`, `TextChunker`, tools, scraper, UI controller).
 
 ```bash
-curl -X POST http://localhost:8081/api/v1/analyze \
-  -F "resume=@/path/to/resume.pdf" \
-  -F "jobDescription=We need a Java backend developer with Spring Boot, REST APIs, and SQL experience."
+./mvnw test
 ```
 
-Compare without tools (function calling off):
+---
 
-```bash
-curl -X POST http://localhost:8081/api/v1/analyze \
-  -F "resume=@/path/to/resume.pdf" \
-  -F "jobDescription=We need a Java backend developer with Spring Boot, REST APIs, and SQL experience." \
-  -F "useTools=false"
-```
+## Design decisions & trade-offs
 
-Analyze from job URL:
+| Decision | Why | Trade-off |
+|----------|-----|-----------|
+| **Local Ollama** | Privacy, zero API cost, works offline | Slower & weaker than GPT-4-class APIs; tool-calling quality varies by model |
+| **Hybrid pipeline** | Don’t ask the LLM to fetch HTML or count tokens | More moving parts than a single prompt |
+| **Post-LLM evidence filter** | Small models invent skills | Can be stricter than a human recruiter |
+| **In-memory RAG (per request)** | Simple, no vector DB ops burden | Re-embeds each request — fine for demo scale, not multi-tenant prod |
+| **Session-cached resume in UI** | Avoid re-upload after each run | Browser file inputs can’t be restored; text is kept server-side for the session only |
+| **URL scrape via Jsoup** | Real JD workflow | Login walls / heavy JS SPAs often fail — paste text fallback |
 
-```bash
-curl -X POST http://localhost:8081/api/v1/analyze-from-url \
-  -F "resume=@/path/to/resume.pdf" \
-  -F "jobUrl=https://example.com/jobs/senior-java-engineer"
-```
-
-Resume-only review:
-
-```bash
-curl -X POST http://localhost:8081/api/v1/resume/review \
-  -F "resume=@/path/to/resume.pdf"
-```
-
+---
 
 ## Project structure
 
 ```
 com.jaywant.resumeanalyzer
-├── api/          REST controllers
-├── web/          Thymeleaf UI controller
-├── domain/       Response models
-├── service/      Business logic (analysis, RAG, ATS, scraper)
-├── ai/           Prompts, tools, structured output
-├── parser/       Text utilities
-└── config/       App properties
+├── api/          REST controllers + exception handling
+├── web/          Thymeleaf UI
+├── domain/       AnalysisResult, Citation, LLM payloads
+├── service/      Analysis, RAG, ATS, scrape, documents
+├── ai/           Prompts, tools, structured output, validators
+├── parser/       Truncation helpers
+└── config/       App properties (RAG, scraper, tools, limits)
+
+src/main/resources/prompts/   versioned prompt templates
+src/test/resources/samples/   golden resume + JDs
+docker-compose.yml            app + ollama
+LEARNING_PLAN.md              day-by-day build journal
 ```
 
-## Gen AI concepts covered
+---
 
-- Prompt engineering with versioned templates (`src/main/resources/prompts/`)
-- Structured JSON output via Spring AI `BeanOutputConverter`
-- RAG with embeddings + vector similarity search
-- Hybrid LLM + deterministic ATS keyword scoring
-- Hybrid code vs LLM pipelines (URL scrape with Jsoup, then LLM analysis)
-- Spring AI function calling (`@Tool`: extractSkills, scoreAtsKeywords, normalizeSkill)
-- Local inference with Ollama (free, private)
-- Packaging: Thymeleaf UI + Docker Compose (app + Ollama)
+## Tech stack
 
-## 2-week learning path
+- Java 17 · Spring Boot 3.4 · Spring AI 1.0 (Ollama)
+- Apache Tika · Jsoup · Thymeleaf · springdoc OpenAPI
+- Ollama models: `llama3.2` (chat), `nomic-embed-text` (embeddings)
+- Maven Wrapper · Docker / Compose · JUnit 5 + Mockito
 
-| Days | Goal |
-|---|---|
-| 1-3 | MVP analyze endpoint + Ollama setup |
-| 4-6 | Resume review + prompt tuning |
-| 7-9 | RAG improvements + evaluation samples |
-| 10-14 | Simple UI, Docker, tests, portfolio polish |
+---
+
+## Run details
+
+### Local
+
+```bash
+./mvnw spring-boot:run
+# Windows: .\mvnw.cmd spring-boot:run
+```
+
+App port: **8081** (see `application.yml`).
+
+### Docker
+
+```bash
+docker compose up --build
+```
+
+| Service | Role |
+|---------|------|
+| `ollama` | LLM + embeddings on `11434` |
+| `ollama-init` | Pulls required models once |
+| `app` | Spring Boot on `8081` |
+
+First run downloads models (several minutes). Stop with `docker compose down` (add `-v` to wipe model volume).
+
+### Example curl
+
+```bash
+curl -X POST http://localhost:8081/api/v1/analyze \
+  -F "resume=@/path/to/resume.pdf" \
+  -F "jobDescription=We need a Java backend developer with Spring Boot, REST APIs, and SQL."
+```
+
+---
+
+## Learning journal
+
+This repo was built across a structured 10-day plan (prompting → structured output → eval → RAG → hybrid scrape → tools → UI/Docker → portfolio). See [`LEARNING_PLAN.md`](LEARNING_PLAN.md) for the day-by-day notes and glossary.
+
+---
 
 ## License
 
-MIT
+MIT — see [`LICENSE`](LICENSE).
